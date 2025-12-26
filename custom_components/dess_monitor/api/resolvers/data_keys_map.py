@@ -51,6 +51,8 @@ SENSOR_KEYS_MAP: Dict[str, list[str]] = {
     ],
     "charge_priority": [
         "bt_charger_source_priority",
+        "sy_eybond_read_75",
+        "Charger Source Priority",
     ],
     "grid_in_power": [
         "gd_grid_active_power",

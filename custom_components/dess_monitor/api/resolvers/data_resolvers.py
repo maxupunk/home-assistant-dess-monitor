@@ -85,15 +85,22 @@ def resolve_output_priority(data, device_data):
 
 def resolve_charge_priority(data, device_data):
     mapper = {
+        # Legacy format (devcode 2341)
         'solar priority': 'SOLAR_PRIORITY',
         'solar and mains': 'SOLAR_AND_UTILITY',
         'solar only': 'SOLAR_ONLY',
+        # New format (devcode 2376 and similar)
+        'utility first': 'UTILITY_FIRST',
+        'pv first': 'SOLAR_PRIORITY',
+        'pv is at the same level as utility': 'SOLAR_AND_UTILITY',
+        'pv is at the same level as mains': 'SOLAR_AND_UTILITY',
+        'only pv': 'SOLAR_ONLY',
         'n/a': 'NONE',
     }
     raw = get_sensor_value_simple("charge_priority", data, device_data)
     if raw is None:
         return None
-    return mapper.get(raw.lower(), None)
+    return mapper.get(raw.lower(), raw)
 
 
 def resolve_grid_in_power(data, device_data):
