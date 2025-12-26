@@ -3,28 +3,22 @@
 ## also known as https://www.eybond.com
 ## or web monitor service https://www.dessmonitor.com 
 
-## Installation via HACS (recommended)
+## Sobre este fork
 
-🎉 The repository has beed added to HACS community store 🎉
+Este repositório é um fork do projeto original do Antoxa1081, ajustado para atender minhas necessidades com um inversor **Anenji 6200 (6200W, 48V)**.
 
-You should find the DESS Monitor integration when you search for DESS Monitor in HACS and you can install it directly from your HACS store.
+No momento, este fork **ainda não está disponível na loja/comunidade do HACS**. A instalação deve ser feita adicionando o repositório como **Custom Repository** no HACS.
 
-If you don't find the integration in your HACS store, use this button to add the repository to your HACS custom repositories:
+## Instalação via HACS (Custom Repository)
 
-[hacs-repo-badge]: https://my.home-assistant.io/badges/hacs_repository.svg
-
-
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Antoxa1081&repository=home-assistant-dess-monitor&category=Integration)
-
-Or use following procedure for HACS 2.0 or later to add the custom repository:
-1. Open the [HACS](https://hacs.xyz) panel in your Home Assistant frontend.
-2. Click the three dots in the top-right corner and select "Custom Repositories."
-3. Add a new custom repository via the Popup dialog:
-   - **Repository URL:** `https://github.com/Antoxa1081/home-assistant-dess-monitor`
+Procedimento para HACS 2.0 ou superior:
+1. Abra o painel do [HACS](https://hacs.xyz) no Home Assistant.
+2. Clique nos três pontos (canto superior direito) e selecione "Custom Repositories".
+3. Adicione um novo repositório customizado:
+   - **Repository URL:** `https://github.com/maxupunk/home-assistant-dess-monitor`
    - **Type:** Integration
-4. Click "Add" and verify that the `DESS Monitor` repository was added to the list.
-5. Close the Popup dialog and verify that `DESS Monitor` integration is now listed in the Home Assistant Community Store.
-6. Install the integration
+4. Clique em "Add".
+5. Instale a integração.
 
 Once installed, use Add Integration -> DESS Monitor.
 Tested with devcodes:
