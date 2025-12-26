@@ -125,12 +125,14 @@ class InverterOutputPrioritySelect(SelectBase):
     async def async_select_option(self, option: str):
         if option in self._attr_options:
             # los_output_source_priority Utility, Solar, SBU
-            await set_inverter_output_priority(
+            result = await set_inverter_output_priority(
                 self.coordinator.auth['token'],
                 self.coordinator.auth['secret'],
                 self._inverter_device.device_data,
                 option
             )
+            if result is None:
+                return
             self._attr_current_option = option
             await self.coordinator.async_request_refresh()
 

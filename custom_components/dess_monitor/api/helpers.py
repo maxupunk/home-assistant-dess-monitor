@@ -145,7 +145,10 @@ async def set_inverter_output_priority(token: str, secret: str, device_data, val
                 'Solar': '1',
                 'SBU': '2'
             }
-            param_value = map_param_value[value]
+            param_value = map_param_value.get(value)
+
+            if param_value is None:
+                return
 
             param_id = 'los_output_source_priority'
         case 2428:
@@ -154,16 +157,23 @@ async def set_inverter_output_priority(token: str, secret: str, device_data, val
                 'Solar': '12337',
                 'SBU': '12338'
             }
-            param_value = map_param_value[value]
+            param_value = map_param_value.get(value)
+
+            if param_value is None:
+                return
 
             param_id = 'bse_output_source_priority'
         case 2376:
             map_param_value = {
                 'Utility': '0',
                 'Solar': '1',
-                'SBU': '2'
+                'SBU': '2',
+                'SUB': '3'
             }
-            param_value = map_param_value[value]
+            param_value = map_param_value.get(value)
+
+            if param_value is None:
+                return
 
             param_id = 'bse_eybond_ctrl_49'
 
