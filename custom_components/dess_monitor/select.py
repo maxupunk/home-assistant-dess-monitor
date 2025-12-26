@@ -15,8 +15,8 @@ from custom_components.dess_monitor.const import DOMAIN
 from custom_components.dess_monitor.hub import InverterDevice
 from custom_components.dess_monitor.util import resolve_number_with_unit
 
-SCAN_INTERVAL = timedelta(seconds=30)
-PARALLEL_UPDATES = 1
+SCAN_INTERVAL = timedelta(seconds=60)
+PARALLEL_UPDATES = 4
 
 
 async def async_setup_entry(
@@ -171,17 +171,20 @@ class InverterDynamicSettingSelect(SelectBase):
 
     async def async_update(self, force=False):
         now = int(datetime.now().timestamp())
-        if self._last_updated is not None and now - self._last_updated > 300:
-            pass
-        else:
-            if self._last_updated is None:
-                pass
-
-        if self.coordinator.auth['token'] is not None:
-            response = await get_device_ctrl_value(self.coordinator.auth['token'],
-                                                   self.coordinator.auth['secret'],
-                                                   self._inverter_device.device_data,
-                                                   self._service_param_id)
+        # Skip update if cache is still valid (5 minutes) unless forced
+        if not force and self._last_updated is not None and (now - self._last_updated) < 300:
+            return
+        
+        if self.coordinator.auth is None or self.coordinator.auth.get('token') is None:
+            return
+        
+        try:
+            response = await get_device_ctrl_value(
+                self.coordinator.auth['token'],
+                self.coordinator.auth['secret'],
+                self._inverter_device.device_data,
+                self._service_param_id
+            )
 
             if 'err' not in response:
                 val = response['val'] if 'unit' not in self._field_data else str(
@@ -200,7 +203,8 @@ class InverterDynamicSettingSelect(SelectBase):
             else:
                 if self._last_updated is None:
                     self._disabled_param = True
-                # print('get_device_ctrl_value', self._inverter_device.name, self._service_param_id, response)
+        except Exception as e:
+            print(f'get_device_ctrl_value error: {self._inverter_device.name} {self._service_param_id} - {e}')
 
     @property
     def available(self) -> bool:
