@@ -29,7 +29,8 @@ class InverterDynamicSensor(SensorBase):
         # "unit": "A"
         self._sensor_par_id = sensor_data['par']
         self._sensor_source = sensor_source
-        self._attr_unique_id = f"{self._inverter_device.inverter_id}_raw_{sensor_data['par']}"
+        # Include sensor source in unique_id to avoid duplicates between PARS_ES and SP_LAST_DATA
+        self._attr_unique_id = f"{self._inverter_device.inverter_id}_raw_{sensor_source.value}_{sensor_data['par']}"
         self._attr_name = f"{self._inverter_device.name} Raw {sensor_data['name']}"
 
         device_class_map = {
