@@ -53,6 +53,7 @@ SENSOR_KEYS_MAP: Dict[str, list[str]] = {
         "bt_charger_source_priority",
         "sy_eybond_read_75",
         "Charger Source Priority",
+        "bat_eybond_ctrl_75",
     ],
     "grid_in_power": [
         "gd_grid_active_power",
@@ -123,24 +124,33 @@ SENSOR_KEYS_MAP: Dict[str, list[str]] = {
     ],
     "bt_utility_charge": [
         "bt_utility_charge",
+        "bat_eybond_ctrl_77",
+        "gd_eybond_read_45",
     ],
     "bt_total_charge_current": [
         "bt_total_charge_current",
+        "bat_eybond_ctrl_76",
     ],
     "bt_cutoff_voltage": [
         "bt_battery_cut_off_voltage",
+        "bat_eybond_ctrl_73",
+        "bat_eybond_ctrl_71",
     ],
     "sy_nominal_out_power": [
         "sy_nonimal_output_active_power",
+        "Nominal Out Power",
     ],
     "sy_rated_battery_voltage": [
         "sy_rated_battery_voltage",
+        "Rated Battery Voltage",
     ],
     "bt_comeback_utility_voltage": [
         "bt_comeback_utility_iode",
+        "bat_eybond_ctrl_71",
     ],
     "bt_comeback_battery_voltage": [
         "bt_battery_mode_voltage",
+        "bat_eybond_ctrl_70",
     ],
     "apparent_load_power": [
         "bt_ac_output_apparent_power",
