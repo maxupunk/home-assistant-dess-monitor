@@ -5,8 +5,12 @@ import urllib
 from datetime import datetime
 
 import aiohttp
+from aiohttp import ClientTimeout
 
 DOMAIN_BASE_URL = 'web.dessmonitor.com'
+
+# Timeout configuration: 15 seconds total, 10 seconds for connection
+DEFAULT_TIMEOUT = ClientTimeout(total=15, connect=10)
 
 headers = {
     'Host': DOMAIN_BASE_URL,
@@ -20,7 +24,7 @@ api_semaphore = asyncio.Semaphore(10)
 
 
 async def auth_user(username: str, password_hash: str):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=DEFAULT_TIMEOUT) as session:
         # print('auth_user', username)
         params = {
             'action': 'authSource',
@@ -69,7 +73,7 @@ def generate_params_signature(token, secret, params):
 
 
 async def create_auth_api_request(token, secret, params, raise_error=True):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=DEFAULT_TIMEOUT) as session:
         async with api_semaphore:
             payload = generate_params_signature(token, secret, params)
             # print(payload)
@@ -94,7 +98,7 @@ class AuthInvalidateError(Exception):
 
 
 async def create_auth_api_remote_request(token, secret, params, raise_error=True):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=DEFAULT_TIMEOUT) as session:
         async with api_semaphore:
             payload = generate_params_signature(token, secret, params)
             # print(payload)
