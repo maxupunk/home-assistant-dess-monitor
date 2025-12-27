@@ -85,23 +85,23 @@ def resolve_output_priority(data, device_data):
 
 def resolve_charge_priority(data, device_data):
     numeric_map = {
-        '0': 'UTILITY_FIRST',
-        '1': 'SOLAR_PRIORITY',
-        '2': 'SOLAR_AND_UTILITY',
-        '3': 'SOLAR_AND_UTILITY',
+        '0': 'Utility First',
+        '1': 'PV First',
+        '2': 'PV Is At The Same Level As Utility',
+        '3': 'PV Is At The Same Level As Utility',
     }
     mapper = {
         # Legacy format (devcode 2341)
-        'solar priority': 'SOLAR_PRIORITY',
-        'solar and mains': 'SOLAR_AND_UTILITY',
-        'solar only': 'SOLAR_ONLY',
+        'solar priority': 'PV First',
+        'solar and mains': 'PV Is At The Same Level As Utility',
+        'solar only': 'Only PV',
         # New format (devcode 2376 and similar)
-        'utility first': 'UTILITY_FIRST',
-        'pv first': 'SOLAR_PRIORITY',
-        'pv is at the same level as utility': 'SOLAR_AND_UTILITY',
-        'pv is at the same level as mains': 'SOLAR_AND_UTILITY',
-        'only pv': 'SOLAR_ONLY',
-        'n/a': 'NONE',
+        'utility first': 'Utility First',
+        'pv first': 'PV First',
+        'pv is at the same level as utility': 'PV Is At The Same Level As Utility',
+        'pv is at the same level as mains': 'PV Is At The Same Level As Utility',
+        'only pv': 'Only PV',
+        'n/a': 'None',
     }
     raw = get_sensor_value_simple("charge_priority", data, device_data)
     if raw is None:
