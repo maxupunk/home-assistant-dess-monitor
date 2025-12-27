@@ -84,6 +84,12 @@ def resolve_output_priority(data, device_data):
 
 
 def resolve_charge_priority(data, device_data):
+    numeric_map = {
+        '0': 'UTILITY_FIRST',
+        '1': 'SOLAR_PRIORITY',
+        '2': 'SOLAR_AND_UTILITY',
+        '3': 'SOLAR_AND_UTILITY',
+    }
     mapper = {
         # Legacy format (devcode 2341)
         'solar priority': 'SOLAR_PRIORITY',
@@ -100,7 +106,12 @@ def resolve_charge_priority(data, device_data):
     raw = get_sensor_value_simple("charge_priority", data, device_data)
     if raw is None:
         return None
-    return mapper.get(raw.lower(), raw)
+    raw_s = str(raw).strip()
+    if raw_s in numeric_map:
+        return numeric_map[raw_s]
+
+    normalized = raw_s.lower().strip()
+    return mapper.get(normalized, raw_s)
 
 
 def resolve_grid_in_power(data, device_data):
@@ -168,15 +179,15 @@ def resolve_inv_temperature(data, device_data):
 
 
 def resolve_bt_utility_charge(data, device_data):
-    return get_sensor_value_simple("bt_utility_charge", data, device_data)
+    return safe_float(get_sensor_value_simple("bt_utility_charge", data, device_data))
 
 
 def resolve_bt_total_charge_current(data, device_data):
-    return get_sensor_value_simple("bt_total_charge_current", data, device_data)
+    return safe_float(get_sensor_value_simple("bt_total_charge_current", data, device_data))
 
 
 def resolve_bt_cutoff_voltage(data, device_data):
-    return get_sensor_value_simple("bt_cutoff_voltage", data, device_data)
+    return safe_float(get_sensor_value_simple("bt_cutoff_voltage", data, device_data))
 
 
 def resolve_sy_nominal_out_power(data, device_data):
@@ -188,8 +199,8 @@ def resolve_sy_rated_battery_voltage(data, device_data):
 
 
 def resolve_bt_comeback_utility_voltage(data, device_data):
-    return get_sensor_value_simple("bt_comeback_utility_voltage", data, device_data)
+    return safe_float(get_sensor_value_simple("bt_comeback_utility_voltage", data, device_data))
 
 
 def resolve_bt_comeback_battery_voltage(data, device_data):
-    return get_sensor_value_simple("bt_comeback_battery_voltage", data, device_data)
+    return safe_float(get_sensor_value_simple("bt_comeback_battery_voltage", data, device_data))

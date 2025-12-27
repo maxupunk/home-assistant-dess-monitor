@@ -115,16 +115,40 @@ class MainCoordinator(DataUpdateCoordinator):
                     energy_flow = await safe_call(get_device_energy_flow(token, secret, device), default={})
                     pars = await safe_call(get_device_pars(token, secret, device), default={})
                     ctrl_fields = await safe_call(get_device_ctrl_fields(token, secret, device), default={'field': []})
+                    if not isinstance(ctrl_fields, dict):
+                        ctrl_fields = {'field': []}
                     output_priority = await safe_call(get_inverter_output_priority(token, secret, ctrl_fields, device), default={})
+
+                    # queryDeviceCtrlField returns available controls/options but not the current value.
+                    # For some diagnostic/config sensors we need queryDeviceCtrlValue.
+                    ctrl_values: dict[str, str] = {}
+                    for ctrl_id in (
+                            'bat_eybond_ctrl_70',
+                            'bat_eybond_ctrl_71',
+                            'bat_eybond_ctrl_73',
+                            'bat_eybond_ctrl_75',
+                            'bat_eybond_ctrl_76',
+                            'bat_eybond_ctrl_77',
+                    ):
+                        try:
+                            if resolve_param(ctrl_fields, {"id": ctrl_id}, case_insensitive=True) is None:
+                                continue
+                        except Exception:
+                            continue
+
+                        ctrl_val = await safe_call(get_device_ctrl_value(token, secret, device, ctrl_id), default=None)
+                        if isinstance(ctrl_val, dict) and ctrl_val.get('val') is not None:
+                            ctrl_values[ctrl_id] = str(ctrl_val.get('val'))
 
                     return pn, {
                         'last_data': last_data,
                         'energy_flow': energy_flow,
                         'pars': pars,
                         'device': device,
-                        'ctrl_fields': ctrl_fields.get('field', []),
+                        'ctrl_fields': ctrl_fields.get('field', []) if isinstance(ctrl_fields, dict) else [],
                         'device_extra': {
                             'output_priority': output_priority,
+                            'ctrl_values': ctrl_values,
                         }
                     }
 

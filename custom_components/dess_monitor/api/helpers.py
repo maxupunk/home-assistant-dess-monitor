@@ -104,6 +104,8 @@ def get_sensor_value_simple(
 ) -> Optional[str]:
     keys = SENSOR_KEYS_MAP.get(name, [])
 
+    ctrl_values = (data.get('device_extra') or {}).get('ctrl_values') or {}
+
     for key in keys:
         res = resolve_param(data, {"id": key}, case_insensitive=True)
         if res:
@@ -112,6 +114,10 @@ def get_sensor_value_simple(
         if res:
             if res.get("status") != 0:
                 return res.get("val")
+
+        # Some values are only available via queryDeviceCtrlValue.
+        if key in ctrl_values and ctrl_values.get(key) is not None:
+            return str(ctrl_values.get(key))
     return None
 
 
