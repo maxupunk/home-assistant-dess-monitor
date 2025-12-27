@@ -115,7 +115,7 @@ class InverterDynamicSettingNumber(NumberBase):
         # self._id
         self._attr_unique_id = f"{self._inverter_device.inverter_id}_settings_{field_data['id']}"
         self._attr_name = f"{self._inverter_device.name} SET {field_data['name']}"
-        self._attr_native_unit_of_measurement = 'V'  # field_data['unit']
+        self._attr_native_unit_of_measurement = field_data.get('unit')
         self._attr_native_min_value = 0
         self._attr_native_max_value = 100
         self._attr_native_step = 0.1
