@@ -16,7 +16,7 @@ from custom_components.dess_monitor.hub import InverterDevice
 from custom_components.dess_monitor.util import resolve_number_with_unit
 
 SCAN_INTERVAL = timedelta(seconds=60)
-PARALLEL_UPDATES = 4
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(
