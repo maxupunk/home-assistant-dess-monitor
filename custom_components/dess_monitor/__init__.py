@@ -1,23 +1,31 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+try:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.const import Platform
+    from homeassistant.core import HomeAssistant
+    _HAS_HOMEASSISTANT = True
+except ModuleNotFoundError:
+    _HAS_HOMEASSISTANT = False
+    ConfigEntry = Any
+    Platform = Any
+    HomeAssistant = Any
 
-from custom_components.dess_monitor.coordinators.coordinator import MainCoordinator
-from custom_components.dess_monitor.coordinators.direct_coordinator import DirectCoordinator
-from . import hub
+if _HAS_HOMEASSISTANT:
+    from custom_components.dess_monitor.coordinators.coordinator import MainCoordinator
+    from custom_components.dess_monitor.coordinators.direct_coordinator import DirectCoordinator
+    from . import hub
 
-# List of platforms to support. There should be a matching .py file for each,
-# eg <cover.py> and <sensor.py>
-PLATFORMS = [Platform.SENSOR, Platform.SELECT, Platform.NUMBER]
-
-type HubConfigEntry = ConfigEntry[hub.Hub]
+PLATFORMS = [Platform.SENSOR, Platform.SELECT, Platform.NUMBER] if _HAS_HOMEASSISTANT else []
+HubConfigEntry = ConfigEntry[hub.Hub] if _HAS_HOMEASSISTANT else Any
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: HubConfigEntry) -> bool:
+    if not _HAS_HOMEASSISTANT:
+        raise RuntimeError("homeassistant is required to run this integration")
     # Store an instance of the "connecting" class that does the work of speaking
     # with your actual devices.
     await _migrate_data_to_options(hass, entry)
@@ -42,6 +50,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: HubConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    if not _HAS_HOMEASSISTANT:
+        raise RuntimeError("homeassistant is required to run this integration")
     """Unload a config entry."""
     # This is called when an entry/configured device is to be removed. The class
     # needs to unload itself, and remove callbacks. See the classes for further
@@ -52,11 +62,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _update_listener(hass: HomeAssistant, entry: ConfigEntry):
+    if not _HAS_HOMEASSISTANT:
+        raise RuntimeError("homeassistant is required to run this integration")
     # Reload the integration
     await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def _migrate_data_to_options(hass: HomeAssistant, entry: ConfigEntry):
+    if not _HAS_HOMEASSISTANT:
+        return
     new_data = dict(entry.data)
     new_options = dict(entry.options)
     fields = [

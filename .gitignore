@@ -3,4 +3,5 @@
 config
 docker-compose.yml
 tests/test-api.py
+__pycache__
 endpoint_dumps/

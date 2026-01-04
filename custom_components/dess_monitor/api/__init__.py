@@ -4,13 +4,16 @@ import time
 import urllib
 from datetime import datetime
 
-import aiohttp
-from aiohttp import ClientTimeout
+try:
+    import aiohttp
+    from aiohttp import ClientTimeout
+except ModuleNotFoundError:
+    aiohttp = None
+    ClientTimeout = None
 
 DOMAIN_BASE_URL = 'web.dessmonitor.com'
 
-# Timeout configuration: 15 seconds total, 10 seconds for connection
-DEFAULT_TIMEOUT = ClientTimeout(total=15, connect=10)
+DEFAULT_TIMEOUT = ClientTimeout(total=15, connect=10) if ClientTimeout is not None else None
 
 headers = {
     'Host': DOMAIN_BASE_URL,
@@ -24,6 +27,8 @@ api_semaphore = asyncio.Semaphore(10)
 
 
 async def auth_user(username: str, password_hash: str):
+    if aiohttp is None or DEFAULT_TIMEOUT is None:
+        raise RuntimeError("aiohttp is required to use the DESS API client")
     async with aiohttp.ClientSession(timeout=DEFAULT_TIMEOUT) as session:
         # print('auth_user', username)
         params = {
@@ -73,6 +78,8 @@ def generate_params_signature(token, secret, params):
 
 
 async def create_auth_api_request(token, secret, params, raise_error=True):
+    if aiohttp is None or DEFAULT_TIMEOUT is None:
+        raise RuntimeError("aiohttp is required to use the DESS API client")
     async with aiohttp.ClientSession(timeout=DEFAULT_TIMEOUT) as session:
         async with api_semaphore:
             payload = generate_params_signature(token, secret, params)
@@ -98,6 +105,8 @@ class AuthInvalidateError(Exception):
 
 
 async def create_auth_api_remote_request(token, secret, params, raise_error=True):
+    if aiohttp is None or DEFAULT_TIMEOUT is None:
+        raise RuntimeError("aiohttp is required to use the DESS API client")
     async with aiohttp.ClientSession(timeout=DEFAULT_TIMEOUT) as session:
         async with api_semaphore:
             payload = generate_params_signature(token, secret, params)

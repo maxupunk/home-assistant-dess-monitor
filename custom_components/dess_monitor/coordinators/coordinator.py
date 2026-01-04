@@ -117,18 +117,42 @@ class MainCoordinator(DataUpdateCoordinator):
                     ctrl_fields = await safe_call(get_device_ctrl_fields(token, secret, device), default={'field': []})
                     if not isinstance(ctrl_fields, dict):
                         ctrl_fields = {'field': []}
-                    output_priority = await safe_call(get_inverter_output_priority(token, secret, ctrl_fields, device), default={})
+                    output_priority = await safe_call(
+                        get_inverter_output_priority(token, secret, ctrl_fields, device),
+                        default=None
+                    )
+                    if output_priority is None:
+                        try:
+                            for group in (last_data or {}).get("pars", {}).values():
+                                if not isinstance(group, list):
+                                    continue
+                                for entry in group:
+                                    if not isinstance(entry, dict):
+                                        continue
+                                    if entry.get("par") != "Output priority" and entry.get("id") != "sy_eybond_read_49":
+                                        continue
+                                    raw = entry.get("val")
+                                    if raw is None:
+                                        continue
+                                    code = str(raw).upper()
+                                    output_priority = {
+                                        "UTI": "Utility",
+                                        "SOL": "Solar",
+                                        "SBU": "SBU",
+                                        "SUB": "SUB",
+                                        "SUF": "SUF",
+                                    }.get(code, code)
+                                    raise StopIteration
+                        except StopIteration:
+                            pass
+                        except Exception:
+                            output_priority = None
 
                     # queryDeviceCtrlField returns available controls/options but not the current value.
                     # For some diagnostic/config sensors we need queryDeviceCtrlValue.
                     ctrl_values: dict[str, str] = {}
                     for ctrl_id in (
-                            'bat_eybond_ctrl_70',
-                            'bat_eybond_ctrl_71',
-                            'bat_eybond_ctrl_73',
                             'bat_eybond_ctrl_75',
-                            'bat_eybond_ctrl_76',
-                            'bat_eybond_ctrl_77',
                     ):
                         try:
                             if resolve_param(ctrl_fields, {"id": ctrl_id}, case_insensitive=True) is None:

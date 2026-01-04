@@ -83,13 +83,6 @@ def create_static_sensors(item, coordinator):
 
         # Inverter config sensors
         InverterChargePrioritySensor,
-        InverterConfigBTUtilityChargeSensor,
-        InverterConfigBTTotalChargeSensor,
-        InverterConfigBTCutoffSensor,
-        InverterNominalOutPowerSensor,
-        InverterRatedBatteryVoltageSensor,
-        InverterComebackUtilityVoltageSensor,
-        InverterComebackBatteryVoltageSensor,
     ]
     return [sensor_cls(item, coordinator) for sensor_cls in sensor_classes]
 

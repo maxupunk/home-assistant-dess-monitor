@@ -1,8 +1,14 @@
 from typing import Any, Dict, Optional
 
-from custom_components.dess_monitor.api import set_ctrl_device_param, get_device_ctrl_value, send_device_direct_command
 from custom_components.dess_monitor.api.commands.direct_commands import decode_direct_response, get_command_hex
 from custom_components.dess_monitor.api.resolvers.data_keys_map import SENSOR_KEYS_MAP
+
+try:
+    from custom_components.dess_monitor.api import set_ctrl_device_param, get_device_ctrl_value, send_device_direct_command
+except ModuleNotFoundError:
+    set_ctrl_device_param = None
+    get_device_ctrl_value = None
+    send_device_direct_command = None
 
 
 def resolve_param(data, where, case_insensitive=False, find_all=False, default=None, root_keys=None):
@@ -109,11 +115,15 @@ def get_sensor_value_simple(
     for key in keys:
         res = resolve_param(data, {"id": key}, case_insensitive=True)
         if res:
-            return res.get("val")
+            val = res.get("val")
+            if val is not None:
+                return val
         res = resolve_param(data, {"par": key}, case_insensitive=True)
         if res:
-            if res.get("status") != 0:
-                return res.get("val")
+            if res.get("status", 1) != 0:
+                val = res.get("val")
+                if val is not None:
+                    return val
 
         # Some values are only available via queryDeviceCtrlValue.
         if key in ctrl_values and ctrl_values.get(key) is not None:
@@ -134,16 +144,37 @@ def get_sensor_value_simple_entry(
     for key in keys:
         res = resolve_param(data, {"id": key}, case_insensitive=True)
         if res:
-            return res.get("id"), res.get("val"), res.get("unit", None)
+            val = res.get("val")
+            if val is not None:
+                return res.get("id"), val, res.get("unit", None)
         res = resolve_param(data, {"par": key}, case_insensitive=True)
         if res:
-            if res.get("status") == 0:
-                return None
-            return res.get("par"), res.get("val"), res.get("unit", None)
+            if res.get("status", 1) == 0:
+                continue
+            val = res.get("val")
+            if val is not None:
+                return res.get("par"), val, res.get("unit", None)
+    return None
+
+
+def resolve_ctrl_field_id(ctrl_fields, sensor_key: str) -> str | None:
+    keys = SENSOR_KEYS_MAP.get(sensor_key, [])
+    for key in keys:
+        res = resolve_param(ctrl_fields, {"id": key}, case_insensitive=True)
+        if res and res.get("id"):
+            return str(res.get("id"))
+        res = resolve_param(ctrl_fields, {"name": key}, case_insensitive=True)
+        if res and res.get("id"):
+            return str(res.get("id"))
+        res = resolve_param(ctrl_fields, {"par": key}, case_insensitive=True)
+        if res and res.get("id"):
+            return str(res.get("id"))
     return None
 
 
 async def set_inverter_output_priority(token: str, secret: str, device_data, value: str):
+    if set_ctrl_device_param is None:
+        raise RuntimeError("aiohttp/homeassistant dependencies not available")
     match device_data['devcode']:
         case 2341:
             map_param_value = {
@@ -174,7 +205,8 @@ async def set_inverter_output_priority(token: str, secret: str, device_data, val
                 'Utility': '0',
                 'Solar': '1',
                 'SBU': '2',
-                'SUB': '3'
+                'SUB': '3',
+                'SUF': '4',
             }
             param_value = map_param_value.get(value)
 
@@ -189,30 +221,63 @@ async def set_inverter_output_priority(token: str, secret: str, device_data, val
 
 
 async def get_inverter_output_priority(token: str, secret: str, ctrl_fields, device_data):
-    map_param_value = {
-        'UTILITY FIRST': 'Utility',
-        'UTILITY': 'Utility',
-        'SOLAR FIRST': 'Solar',
-        'SOLAR': 'Solar',
-        'SOL': 'Solar',
-        'SBU': 'SBU',
-        'SBU FIRST': 'SBU',
-        'UTI': 'Utility',
-        'SUB': 'SUB',
-        None: None
-    }
+    if get_device_ctrl_value is None:
+        raise RuntimeError("aiohttp/homeassistant dependencies not available")
+    def _normalize_key(value: Any) -> str | None:
+        if value is None:
+            return None
+        s = str(value).strip()
+        try:
+            f = float(s)
+            if f.is_integer():
+                return str(int(f))
+        except Exception:
+            pass
+        return s
 
-    entry = get_sensor_value_simple_entry('output_priority_option', ctrl_fields, device_data)
-
-    if entry is None:
+    param_id = resolve_ctrl_field_id(ctrl_fields, "output_priority_option")
+    if param_id is None:
         return None
-    param_id, _, _ = entry
+
+    ctrl_field_entry = resolve_param(ctrl_fields, {"id": param_id}, case_insensitive=True) or {}
+    item_key_to_val: dict[str, str] = {}
+    for item in ctrl_field_entry.get("item") or []:
+        try:
+            k = str(item.get("key")).strip().upper()
+            v = str(item.get("val")).strip().upper()
+            item_key_to_val[k] = v
+        except Exception:
+            continue
+
     result = await get_device_ctrl_value(token, secret, device_data, param_id)
-    if result['val'].upper() not in map_param_value:
+    raw = result.get("val") if isinstance(result, dict) else None
+    if raw is None:
         return None
-    return map_param_value[result['val'].upper()]
+
+    raw_n = _normalize_key(raw)
+    raw_u = str(raw_n).strip().upper() if raw_n is not None else None
+    if raw_u is None:
+        return None
+
+    code = item_key_to_val.get(raw_u, raw_u)
+
+    map_code = {
+        "UTILITY FIRST": "Utility",
+        "UTILITY": "Utility",
+        "UTI": "Utility",
+        "SOLAR FIRST": "Solar",
+        "SOLAR": "Solar",
+        "SOL": "Solar",
+        "SBU FIRST": "SBU",
+        "SBU": "SBU",
+        "SUB": "SUB",
+        "SUF": "SUF",
+    }
+    return map_code.get(code, code)
 
 
 async def get_direct_data(token: str, secret: str, device_data, cmd_name):
+    if send_device_direct_command is None:
+        raise RuntimeError("aiohttp/homeassistant dependencies not available")
     result = await send_device_direct_command(token, secret, device_data, get_command_hex(cmd_name))
     return decode_direct_response(cmd_name, result['dat'])

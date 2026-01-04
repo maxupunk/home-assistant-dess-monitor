@@ -108,7 +108,11 @@ class InverterOutputPrioritySelect(SelectBase):
         super().__init__(inverter_device, coordinator)
         self._attr_unique_id = f"{self._inverter_device.inverter_id}_output_priority"
         self._attr_name = f"{self._inverter_device.name} Output Priority"
-        self._attr_options = ['Utility', 'Solar', 'SBU', 'SUB']
+        devcode = self._inverter_device.device_data.get("devcode")
+        options = ['Utility', 'Solar', 'SBU']
+        if devcode == 2376:
+            options.extend(['SUB', 'SUF'])
+        self._attr_options = options
 
         if coordinator.data is not None:
             data = coordinator.data[self._inverter_device.inverter_id]

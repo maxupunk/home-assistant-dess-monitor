@@ -176,31 +176,3 @@ def resolve_dc_module_temperature(data, device_data):
 
 def resolve_inv_temperature(data, device_data):
     return get_sensor_value_simple("inv_temperature", data, device_data)
-
-
-def resolve_bt_utility_charge(data, device_data):
-    return safe_float(get_sensor_value_simple("bt_utility_charge", data, device_data))
-
-
-def resolve_bt_total_charge_current(data, device_data):
-    return safe_float(get_sensor_value_simple("bt_total_charge_current", data, device_data))
-
-
-def resolve_bt_cutoff_voltage(data, device_data):
-    return safe_float(get_sensor_value_simple("bt_cutoff_voltage", data, device_data))
-
-
-def resolve_sy_nominal_out_power(data, device_data):
-    return get_sensor_value_simple("sy_nominal_out_power", data, device_data)
-
-
-def resolve_sy_rated_battery_voltage(data, device_data):
-    return get_sensor_value_simple("sy_rated_battery_voltage", data, device_data)
-
-
-def resolve_bt_comeback_utility_voltage(data, device_data):
-    return safe_float(get_sensor_value_simple("bt_comeback_utility_voltage", data, device_data))
-
-
-def resolve_bt_comeback_battery_voltage(data, device_data):
-    return safe_float(get_sensor_value_simple("bt_comeback_battery_voltage", data, device_data))

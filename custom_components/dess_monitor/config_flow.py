@@ -167,7 +167,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         "options": [
                             {
                                 "value": str(device['pn']),
-                                "label": f'{device['devalias']}; pn: {device['pn']}; devcode: {device['devcode']}'
+                                "label": f"{device['devalias']}; pn: {device['pn']}; devcode: {device['devcode']}"
                             }
                             for device in self._devices
                         ]
@@ -212,7 +212,7 @@ class OptionsFlow(config_entries.OptionsFlow):
                         "multiple": True,
                         "options": [
                             {"value": str(device['pn']),
-                             "label": f'{device['devalias']}; pn: {device['pn']}; devcode: {device['devcode']}'}
+                             "label": f"{device['devalias']}; pn: {device['pn']}; devcode: {device['devcode']}"}
                             for device in self._devices
                         ]
                     }
