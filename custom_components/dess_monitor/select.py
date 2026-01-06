@@ -9,7 +9,12 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from custom_components.dess_monitor import MainCoordinator, HubConfigEntry
 from custom_components.dess_monitor.api import set_ctrl_device_param, get_device_ctrl_value
-from custom_components.dess_monitor.api.helpers import set_inverter_output_priority
+from custom_components.dess_monitor.api.helpers import (
+    normalize_output_priority_label,
+    resolve_ctrl_field_id,
+    resolve_param,
+    set_inverter_output_priority,
+)
 from custom_components.dess_monitor.api.resolvers.data_resolvers import resolve_output_priority
 from custom_components.dess_monitor.const import DOMAIN
 from custom_components.dess_monitor.hub import InverterDevice
@@ -109,9 +114,34 @@ class InverterOutputPrioritySelect(SelectBase):
         self._attr_unique_id = f"{self._inverter_device.inverter_id}_output_priority"
         self._attr_name = f"{self._inverter_device.name} Output Priority"
         devcode = self._inverter_device.device_data.get("devcode")
-        options = ['Utility', 'Solar', 'SBU']
-        if devcode == 2376:
-            options.extend(['SUB', 'SUF'])
+        options = None
+        if coordinator.data is not None:
+            try:
+                data = coordinator.data[self._inverter_device.inverter_id]
+                ctrl_fields = data.get("ctrl_fields") if isinstance(data, dict) else None
+                if ctrl_fields:
+                    param_id = resolve_ctrl_field_id(ctrl_fields, "output_priority_option")
+                    if param_id:
+                        ctrl_field_entry = resolve_param(ctrl_fields, {"id": param_id}, case_insensitive=True) or {}
+                        derived: list[str] = []
+                        for item in ctrl_field_entry.get("item") or []:
+                            label = normalize_output_priority_label(item.get("val"))
+                            if label not in ("Utility", "Solar", "SBU", "SUB", "SUF"):
+                                continue
+                            if label not in derived:
+                                derived.append(label)
+                        if "Utility" in derived and "SUB" not in derived:
+                            derived.append("SUB")
+                        if derived:
+                            options = derived
+            except Exception:
+                options = None
+
+        if options is None:
+            options = ["Utility", "Solar", "SBU", "SUB"]
+            if devcode == 2376:
+                if "SUF" not in options:
+                    options.append("SUF")
         self._attr_options = options
 
         if coordinator.data is not None:
@@ -122,18 +152,39 @@ class InverterOutputPrioritySelect(SelectBase):
     @callback
     def _handle_coordinator_update(self) -> None:
         data = self.coordinator.data[self._inverter_device.inverter_id]
+        ctrl_fields = data.get("ctrl_fields") if isinstance(data, dict) else None
+        if ctrl_fields:
+            try:
+                param_id = resolve_ctrl_field_id(ctrl_fields, "output_priority_option")
+                if param_id:
+                    ctrl_field_entry = resolve_param(ctrl_fields, {"id": param_id}, case_insensitive=True) or {}
+                    derived: list[str] = []
+                    for item in ctrl_field_entry.get("item") or []:
+                        label = normalize_output_priority_label(item.get("val"))
+                        if label not in ("Utility", "Solar", "SBU", "SUB", "SUF"):
+                            continue
+                        if label not in derived:
+                            derived.append(label)
+                    if "Utility" in derived and "SUB" not in derived:
+                        derived.append("SUB")
+                    if derived:
+                        self._attr_options = derived
+            except Exception:
+                pass
         device_data = self._inverter_device.device_data
         self._attr_current_option = resolve_output_priority(data, device_data)
         self.async_write_ha_state()
 
     async def async_select_option(self, option: str):
         if option in self._attr_options:
-            # los_output_source_priority Utility, Solar, SBU
+            data = self.coordinator.data[self._inverter_device.inverter_id]
+            ctrl_fields = data.get("ctrl_fields") if isinstance(data, dict) else None
             result = await set_inverter_output_priority(
                 self.coordinator.auth['token'],
                 self.coordinator.auth['secret'],
                 self._inverter_device.device_data,
-                option
+                option,
+                ctrl_fields=ctrl_fields,
             )
             if result is None:
                 return

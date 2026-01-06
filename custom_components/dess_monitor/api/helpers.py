@@ -172,13 +172,63 @@ def resolve_ctrl_field_id(ctrl_fields, sensor_key: str) -> str | None:
     return None
 
 
-async def set_inverter_output_priority(token: str, secret: str, device_data, value: str):
+def normalize_output_priority_label(value: Any) -> str | None:
+    if value is None:
+        return None
+    s = str(value).strip().upper()
+    map_code = {
+        "UTILITY FIRST": "Utility",
+        "UTILITY": "Utility",
+        "UTI": "Utility",
+        "SOLAR FIRST": "Solar",
+        "SOLAR": "Solar",
+        "SOL": "Solar",
+        "SBU FIRST": "SBU",
+        "SBU": "SBU",
+        "SUB": "SUB",
+        "SUF": "SUF",
+    }
+    return map_code.get(s, s)
+
+
+async def set_inverter_output_priority(
+    token: str,
+    secret: str,
+    device_data,
+    value: str,
+    ctrl_fields=None,
+):
     if set_ctrl_device_param is None:
         raise RuntimeError("aiohttp/homeassistant dependencies not available")
+    if ctrl_fields is not None:
+        try:
+            param_id = resolve_ctrl_field_id(ctrl_fields, "output_priority_option")
+            if param_id:
+                ctrl_field_entry = resolve_param(ctrl_fields, {"id": param_id}, case_insensitive=True) or {}
+                wanted = normalize_output_priority_label(value)
+                wanted_candidates = [wanted]
+                if wanted == "SUB":
+                    has_sub = False
+                    for item in ctrl_field_entry.get("item") or []:
+                        if normalize_output_priority_label(item.get("val")) == "SUB":
+                            has_sub = True
+                            break
+                    if not has_sub:
+                        wanted_candidates.append("Utility")
+                for item in ctrl_field_entry.get("item") or []:
+                    if normalize_output_priority_label(item.get("val")) not in wanted_candidates:
+                        continue
+                    item_key = item.get("key")
+                    if item_key is None:
+                        break
+                    return await set_ctrl_device_param(token, secret, device_data, param_id, str(item_key))
+        except Exception:
+            pass
     match device_data['devcode']:
         case 2341:
             map_param_value = {
                 'Utility': '0',
+                'SUB': '0',
                 'Solar': '1',
                 'SBU': '2'
             }
@@ -191,6 +241,7 @@ async def set_inverter_output_priority(token: str, secret: str, device_data, val
         case 2428:
             map_param_value = {
                 'Utility': '12336',
+                'SUB': '12336',
                 'Solar': '12337',
                 'SBU': '12338'
             }
@@ -261,19 +312,8 @@ async def get_inverter_output_priority(token: str, secret: str, ctrl_fields, dev
 
     code = item_key_to_val.get(raw_u, raw_u)
 
-    map_code = {
-        "UTILITY FIRST": "Utility",
-        "UTILITY": "Utility",
-        "UTI": "Utility",
-        "SOLAR FIRST": "Solar",
-        "SOLAR": "Solar",
-        "SOL": "Solar",
-        "SBU FIRST": "SBU",
-        "SBU": "SBU",
-        "SUB": "SUB",
-        "SUF": "SUF",
-    }
-    return map_code.get(code, code)
+    normalized = normalize_output_priority_label(code)
+    return normalized if normalized is not None else code
 
 
 async def get_direct_data(token: str, secret: str, device_data, cmd_name):
